@@ -1,0 +1,76 @@
+:root {
+    --primary: #1a237e;
+    --secondary: #ffd700;
+    --dark: #121212;
+    --light: #f4f4f4;
+    --success: #2ecc71;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    background-color: var(--light);
+    color: var(--dark);
+}
+
+nav {
+    background: var(--primary);
+    padding: 1rem 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    margin-left: 20px;
+    font-weight: bold;
+}
+
+.hero {
+    background: linear-gradient(rgba(26, 35, 126, 0.9), rgba(26, 35, 126, 0.9)), url('https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?auto=format&fit=crop&w=800&q=80');
+    background-size: cover;
+    color: white;
+    padding: 100px 10%;
+    text-align: center;
+}
+
+.btn {
+    background: var(--secondary);
+    color: var(--primary);
+    padding: 12px 30px;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.card-container {
+    display: flex;
+    justify-content: space-around;
+    padding: 50px 10%;
+    flex-wrap: wrap;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    width: 250px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.stat-box {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 5px solid var(--secondary);
+    margin: 10px 0;
+}
+
+
