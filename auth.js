@@ -1,61 +1,67 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
-const User = require('./user');
+const User = require('./user'); // This connects to our database model
 
-// --- REGISTRATION ROUTE ---
+// 1. REGISTRATION LOGIC
 router.post('/register', async (req, res) => {
     try {
-        const { phone, password, referredByCode } = req.body;
+        const { fullName, phone, password } = req.body;
 
-        // Check if user exists
+        // Check if user already exists
         let user = await User.findOne({ phone });
-        if (user) return res.status(400).json({ msg: "User already exists" });
+        if (user) {
+            return res.status(400).send('Error: This phone number is already registered.');
+        }
 
-        // Hash the password
+        // Hash the password (Security)
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Find who referred them (optional)
-        let referrer = null;
-        if (referredByCode) {
-            referrer = await User.findOne({ referralCode: referredByCode });
-        }
-
-        // Create new user
-        const newUser = new User({
+        // Create new user (Not activated yet)
+        user = new User({
+            fullName,
             phone,
             password: hashedPassword,
-            referredBy: referrer ? referrer._id : null,
-            referralCode: Math.random().toString(36).substring(2, 8).toUpperCase()
+            isActivated: false,
+            balance: 0
         });
 
-        await newUser.save();
-        res.json({ msg: "Registration successful" });
+        await user.save();
 
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+        // Success! Now we trigger the M-Pesa Payment
+        console.log(`New user created: ${fullName}. Waiting for payment...`);
+        res.redirect('/stkpush'); // This sends them to the payment trigger
+
+    } catch (error) {
+        console.error("Registration Error:", error);
+        res.status(500).send('Server error. Please try again later.');
     }
 });
 
-// --- LOGIN ROUTE ---
+// 2. LOGIN LOGIC
 router.post('/login', async (req, res) => {
     try {
         const { phone, password } = req.body;
 
-        // 1. Find user by phone
+        // Find user by phone
         const user = await User.findOne({ phone });
-        if (!user) return res.status(400).json({ msg: "User not found" });
+        if (!user) {
+            return res.status(400).send('Error: Invalid Phone or Password');
+        }
 
-        // 2. Compare the password with the hashed version in DB
+        // Check if password matches the scrambled version in DB
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
+        if (!isMatch) {
+            return res.status(400).send('Error: Invalid Phone or Password');
+        }
 
-        // 3. If everything is correct
-        res.json({ msg: "Login successful", phone: user.phone });
+        // If successful, send them to their dashboard
+        res.send(`Welcome back, ${user.fullName}! Redirecting to your dashboard...`);
 
-    } catch (err) {
-        res.status(500).json({ error: err.message });
+    } catch (error) {
+        console.error("Login Error:", error);
+        res.status(500).send('Server error.');
     }
 });
 
