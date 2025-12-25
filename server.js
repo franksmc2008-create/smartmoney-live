@@ -1,88 +1,47 @@
+require('dotenv').config();
 const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
 const path = require('path');
-const authRoutes = require('./auth');
-const User = require('./user');
-
+const axios = require('axios'); // For M-Pesa API calls
 const app = express();
 
-app.use(cors());
+// 1. SETTINGS & MIDDLEWARE
+const PORT = process.env.PORT || 8080; // Koyeb uses 8080 by default
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// This line tells the server to share your CSS, Images, and HTML
 app.use(express.static(__dirname));
 
-// Your Cloud Database Connection
-const dbURI = "mongodb+srv://frankmathaa7_db_user:VTC2N6nujp6sF61N@cluster01.ktjil9d.mongodb.net/SmartMoneyDB?retryWrites=true&w=majority";
+// 2. THE ROUTES (Navigation)
 
-mongoose.connect(dbURI)
-    .then(() => console.log("Connected to MongoDB Atlas! ✅"))
-    .catch(err => console.error("Database Error: ", err));
-
-// --- API: FETCH STATS & AUTO-GENERATE REFERRAL LINKS ---
-app.get('/api/user/stats/:phone', async (req, res) => {
-    try {
-        let user = await User.findOne({ phone: req.params.phone });
-        if (!user) return res.status(404).json({ msg: "User not found" });
-
-        // SELF-HEALING: Generate a code if the user doesn't have one yet
-        if (!user.referralCode) {
-            user.referralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-            await user.save();
-        }
-
-        // Count how many people joined using this user's link
-        const referralsCount = await User.countDocuments({ referredBy: user._id });
-
-        res.json({
-            balance: user.balance,
-            referralCode: user.referralCode,
-            directReferrals: referralsCount
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+// Serve the Homepage
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// --- API: ACTIVATION & 60/20/10 COMMISSION LOGIC ---
-app.post('/api/activate', async (req, res) => {
-    try {
-        const { phone } = req.body;
-        const user = await User.findOne({ phone });
-
-        if (!user || user.isPaid) return res.status(400).json({ msg: "Invalid activation" });
-
-        user.isPaid = true;
-        await user.save();
-
-        // LEVEL 1: Give 60/- to the direct referrer
-        let L1 = await User.findById(user.referredBy);
-        if (L1) {
-            L1.balance += 60;
-            await L1.save();
-            
-            // LEVEL 2: Give 20/- to the person above them
-            let L2 = await User.findById(L1.referredBy);
-            if (L2) {
-                L2.balance += 20;
-                await L2.save();
-                
-                // LEVEL 3: Give 10/- to the top person
-                let L3 = await User.findById(L2.referredBy);
-                if (L3) {
-                    L3.balance += 10;
-                    await L3.save();
-                }
-            }
-        }
-        res.json({ msg: "Account Activated! Commissions distributed." });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+// Placeholder for Login
+app.get('/login', (req, res) => {
+    res.send('Login Page Coming Soon - Use GitHub to add login.html!');
 });
 
-app.use('/api/auth', authRoutes);
+// 3. M-PESA LOGIC (The Money Part)
 
-const PORT = 3000;
+// Route to trigger M-Pesa STK Push
+app.post('/stkpush', async (req, res) => {
+    console.log("M-Pesa payment requested...");
+    // We will add your Daraja API logic here once we link Koyeb!
+    res.json({ message: "STK Push Initiated. Check your phone!" });
+});
+
+// Route for M-Pesa to tell us if payment was successful
+app.post('/callback', (req, res) => {
+    const data = req.body;
+    console.log("M-Pesa Callback Received:", data);
+    res.status(200).send("Callback Received");
+});
+
+// 4. START THE ENGINE
 app.listen(PORT, () => {
-    console.log(`🚀 SmartMoney Engine Live at http://localhost:${PORT}`);
+    console.log(`🚀 SmartMoney is live on port ${PORT}`);
+    console.log(`Link: http://localhost:${PORT} (Local) or your Koyeb URL (Live)`);
 });
