@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | EarnFlow</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+        .nav { background: #1a237e; color: white; padding: 15px; display: flex; justify-content: space-between; border-radius: 8px; margin-bottom: 20px; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .stat-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
+        .stat-card.blue { background: #1a237e; color: white; }
+        .stat-val { font-size: 24px; font-weight: bold; display: block; margin-top: 10px; }
+        .ref-box { background: white; padding: 20px; border-radius: 12px; margin-top: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        input { width: 100%; padding: 10px; margin-top: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        .btn-withdraw { width: 100%; padding: 15px; background: #2ecc71; color: white; border: none; border-radius: 8px; margin-top: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="nav">
+    <span>Welcome User!</span>
+    <span onclick="logout()" style="cursor:pointer">Logout</span>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card blue">
+        <span>Total Balance</span>
+        <span class="stat-val" id="totalBalance">Ksh 0</span>
+    </div>
+    <div class="stat-card">
+        <span>Direct Referrals</span>
+        <span class="stat-val" id="directCount">0</span>
+    </div>
+</div>
+
+<div class="ref-box">
+    <strong>Your Referral Link</strong>
+    <input type="text" id="referralLink" readonly>
+    <p style="font-size: 12px; color: #666; margin-top: 10px;">Share this link to earn 60/- per person!</p>
+</div>
+
+<button class="btn-withdraw">Withdraw to M-Pesa</button>
+
+<script>
+    async function loadStats() {
+        const phone = localStorage.getItem('userPhone');
+        if (!phone) { window.location.href = 'login.html'; return; }
+
+        try {
+            const res = await fetch(`/api/user/stats/${phone}`);
+            const data = await res.json();
+
+            if (res.ok) {
+                // Update text with real data from database
+                document.getElementById('totalBalance').innerText = `Ksh ${data.balance}`;
+                document.getElementById('directCount').innerText = data.directReferrals;
+                document.getElementById('referralLink').value = `http://${window.location.host}/register.html?ref=${data.referralCode}`;
+            }
+        } catch (err) {
+            console.error("Failed to load data");
+        }
+    }
+
+    function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+    window.onload = loadStats;
+</script>
+
+</body>
+</html>
