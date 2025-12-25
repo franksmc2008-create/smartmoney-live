@@ -1,47 +1,36 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
-const axios = require('axios'); // For M-Pesa API calls
-const app = express();
+const mongoose = require('mongoose');
+const authRoutes = require('./auth'); // Connects our login/register logic
 
-// 1. SETTINGS & MIDDLEWARE
-const PORT = process.env.PORT || 8080; // Koyeb uses 8080 by default
+const app = express();
+const PORT = process.env.PORT || 8080;
+
+// 1. DATABASE CONNECTION
+// We will put the actual link in Koyeb later for security
+mongoose.connect(process.env.MONGO_URI)
+    .then(() => console.log("✅ Connected to SmartMoney Database"))
+    .catch(err => console.error("❌ Database Connection Error:", err));
+
+// 2. MIDDLEWARE
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// This line tells the server to share your CSS, Images, and HTML
 app.use(express.static(__dirname));
 
-// 2. THE ROUTES (Navigation)
+// 3. ROUTES
+app.use('/', authRoutes); // This activates your Register/Login buttons
 
-// Serve the Homepage
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Placeholder for Login
-app.get('/login', (req, res) => {
-    res.send('Login Page Coming Soon - Use GitHub to add login.html!');
+// M-Pesa Placeholder
+app.post('/stkpush', (req, res) => {
+    res.send("<h1>Payment Page</h1><p>M-Pesa STK Push will trigger here once we link Daraja.</p>");
 });
 
-// 3. M-PESA LOGIC (The Money Part)
-
-// Route to trigger M-Pesa STK Push
-app.post('/stkpush', async (req, res) => {
-    console.log("M-Pesa payment requested...");
-    // We will add your Daraja API logic here once we link Koyeb!
-    res.json({ message: "STK Push Initiated. Check your phone!" });
-});
-
-// Route for M-Pesa to tell us if payment was successful
-app.post('/callback', (req, res) => {
-    const data = req.body;
-    console.log("M-Pesa Callback Received:", data);
-    res.status(200).send("Callback Received");
-});
-
-// 4. START THE ENGINE
+// 4. START SERVER
 app.listen(PORT, () => {
-    console.log(`🚀 SmartMoney is live on port ${PORT}`);
-    console.log(`Link: http://localhost:${PORT} (Local) or your Koyeb URL (Live)`);
+    console.log(`🚀 SmartMoney Engine Running on Port ${PORT}`);
 });
